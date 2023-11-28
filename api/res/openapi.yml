@@ -25,7 +25,10 @@ paths:
                 type: object
                 properties:
                   "^[a-zA-Z0-9_-]":
-                    $ref: '#/components/schemas/Service'
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+                    
         '500':
           description: Server error
           content:
@@ -333,7 +336,6 @@ components:
       required:
         - name
         - type
-        - version
     Version:
       type: object
       properties:
