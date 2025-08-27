@@ -25,6 +25,10 @@
  */
 import { EventSource } from 'eventsource';
 import { Store } from 'vuex';
+import { sortByPropertyWithKeywordFirst } from '../utils/sorting-util';
+
+const sortByNameWithKeywordFirst = (apps) =>
+  sortByPropertyWithKeywordFirst(apps, 'name', 'latest');
 
 const SERVICE_TYPE_ORDER = [
     'instance',
@@ -113,20 +117,33 @@ export function createStore(router, me, issuers) {
                return [];
             }
 
-            return getters.reviewApps
-               .filter(app => (app.owners ?? []).some(owner => owner.sub == state.me.sub && owner.iss == state.me.iss));
+            return sortByNameWithKeywordFirst(
+               getters.reviewApps.filter((app) =>
+                  (app.owners ?? []).some( (owner) => owner.sub == state.me.sub && owner.iss == state.me.iss)
+               )
+            );
+         },
+
+         notMyApps: (state, getters) => {
+            return getters.reviewApps.filter(
+               (app) => !getters.myApps.some((myApp) => app.name == myApp.name)
+            );
          },
 
          appsWithTicket: (state, getters) => {
-            return getters.reviewApps
-               .filter( app => !getters.myApps.some(myApp => app.name == myApp.name) )
-               .filter( app => state.tickets[ app.name ] !== undefined );
+            return sortByNameWithKeywordFirst(
+               getters.notMyApps.filter(
+                  (app) => state.tickets[app.name] !== undefined
+               )
+            );
          },
 
          appsWithoutTicket: (state, getters) => {
-            return getters.reviewApps
-               .filter( app => !getters.myApps.some(myApp => app.name == myApp.name) )
-               .filter( app => state.tickets[ app.name ] === undefined );
+            return sortByNameWithKeywordFirst(
+               getters.notMyApps.filter(
+                  (app) => state.tickets[app.name] === undefined
+               )
+            );
          },
 
          errors: state => {
