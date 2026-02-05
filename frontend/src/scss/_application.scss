@@ -40,9 +40,12 @@ body {
    background-color: colors.$app-background-color;
 }
 
-.container {
-   max-width: 94vw;
-
+#app {
+   width: 100vw;
+   margin: 0;
+   padding-right: 15px;
+   padding-left: 15px;
+   
     > h1 {
       font-size: 2rem;
 
@@ -75,16 +78,39 @@ body {
 }
 
 .ra-apps {
-   display: grid;
-
-   grid-auto-rows: 1fr;
-   grid-template-columns: repeat(auto-fill, minmax(22.5em, 1fr));
-   grid-gap: 1rem;
+   column-gap: 1rem;
 
     > div {
       max-width: 100%;
    }
+
+   > .list-complete-item {
+      break-inside: avoid;
+      display: inline-block;
+      width: 100%;
+      margin-bottom: 1rem;
+   }
 }
+
+
+@media (min-width: 1200px) {
+   .ra-apps {
+      column-count: 4;
+   }
+}
+
+@media (min-width: 1600px) {
+   .ra-apps {
+      column-count: 5;
+   }
+}
+
+@media (min-width: 2000px) {
+   .ra-apps {
+      column-count: 6;
+   }
+}
+
 
 // IE10+ Hack
 _:-ms-lang(x),

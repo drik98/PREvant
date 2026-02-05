@@ -42,6 +42,11 @@
          </ul>
          <form class="form-inline my-2 my-lg-0">
 
+            <div class="custom-control custom-switch">
+  <input type="checkbox" class="custom-control-input" id="customSwitch1">
+  <label class="custom-control-label" for="customSwitch1">Toggle this switch element</label>
+</div>
+
             <input class="form-control mr-sm-2" type="search" placeholder="Search Apps" aria-label="Search"
                    ref="searchApps"
                    :value="appNameFilter"

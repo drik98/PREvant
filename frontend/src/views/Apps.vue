@@ -25,7 +25,7 @@
  */
 
 <template>
-   <div class="container" id="app">
+   <div id="app">
 
       <spinner v-if="isFetchInProgress" />
 

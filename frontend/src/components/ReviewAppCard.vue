@@ -72,7 +72,7 @@
          </div>
 
          <div class="card-body">
-            <div v-for="container in reviewApp.containers"
+            <div v-for="container in containers"
                  :key="container.name"
                  class="ra-container"
                  :class="{ 'ra-container__paused': container.status !== 'running' }">
@@ -124,8 +124,8 @@
                </div>
 
                <div class="ra-container__tags">
-                  <span class="badge"
-                        :class="badgeClass( container.type )">{{ container.type }}</span>
+                  <!-- <span class="badge"
+                        :class="badgeClass( container.type )">{{ container.type }}</span> -->
                   <span v-if="container.version && container.version.gitCommit"
                         class="ra-build-infos ra-build-infos__hash text-right"
                         :title="formatVersion( container.version )">
@@ -134,6 +134,11 @@
                      <!-- c63ae57… -->
                   </span>
                </div>
+            </div>
+
+            <div v-if="!containers.length"
+               class="ra-container">
+               This app consists of replicas only.
             </div>
 
             <textarea
@@ -236,6 +241,9 @@
                Object.entries(this.containerVersions).map(([k, v]) => `${k}=${v}`).join(', ');
             return `[${this.reviewApp.name}@${latestBuildTime(this.reviewApp)}; ${versions}]`;
          },
+         containers() {
+            return this.reviewApp.containers.filter(container => container.type === "instance");
+         }
       },
       methods: {
          duplicateApp() {
