@@ -52,9 +52,9 @@ use bollard::secret::{
     VolumeCreateOptions,
 };
 use bollard::service::{
-    ContainerCreateResponse, ContainerInspectResponse, ContainerStateStatusEnum, ContainerSummary,
-    CreateImageInfo, EndpointSettings, HealthStatusEnum, HostConfig, RestartPolicy,
-    RestartPolicyNameEnum, VolumeListResponse,
+    ContainerCreateResponse, ContainerInspectResponse, ContainerState, ContainerStateStatusEnum,
+    ContainerSummary, CreateImageInfo, EndpointSettings, HealthStatusEnum, HostConfig,
+    RestartPolicy, RestartPolicyNameEnum, VolumeListResponse,
 };
 use bollard::Docker;
 use chrono::{DateTime, FixedOffset, Utc};
@@ -1335,21 +1335,22 @@ impl TryFrom<ContainerInspectResponse> for Service {
             _ => ServiceStatus::Paused,
         };
 
-        let health = state
-            .health
-            .and_then(|h| h.status)
-            .and_then(|s| match s {
-                HealthStatusEnum::STARTING => Some(HealthStatus::Starting),
-                HealthStatusEnum::HEALTHY => Some(HealthStatus::Healthy),
-                HealthStatusEnum::UNHEALTHY => Some(HealthStatus::Unhealthy),
-                _ => None,
-            });
+        let health = health_from_container_state(&state);
 
         Ok(Service {
             id: container_id,
             config,
             state: State { status, health, started_at },
         })
+    }
+}
+
+fn health_from_container_state(state: &ContainerState) -> Option<HealthStatus> {
+    match state.health.as_ref()?.status? {
+        HealthStatusEnum::STARTING => Some(HealthStatus::Starting),
+        HealthStatusEnum::HEALTHY => Some(HealthStatus::Healthy),
+        HealthStatusEnum::UNHEALTHY => Some(HealthStatus::Unhealthy),
+        _ => None,
     }
 }
 
@@ -1797,5 +1798,45 @@ mod tests {
               }
             })
         );
+    }
+
+    fn container_state_with_health(status: HealthStatusEnum) -> ContainerState {
+        use bollard::models::Health;
+        ContainerState {
+            health: Some(Health {
+                status: Some(status),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn should_return_no_health_for_container_without_health_check() {
+        assert_eq!(health_from_container_state(&ContainerState::default()), None);
+    }
+
+    #[test]
+    fn should_return_starting_for_container_with_starting_health_status() {
+        let state = container_state_with_health(HealthStatusEnum::STARTING);
+        assert_eq!(health_from_container_state(&state), Some(HealthStatus::Starting));
+    }
+
+    #[test]
+    fn should_return_healthy_for_container_with_healthy_health_status() {
+        let state = container_state_with_health(HealthStatusEnum::HEALTHY);
+        assert_eq!(health_from_container_state(&state), Some(HealthStatus::Healthy));
+    }
+
+    #[test]
+    fn should_return_unhealthy_for_container_with_unhealthy_health_status() {
+        let state = container_state_with_health(HealthStatusEnum::UNHEALTHY);
+        assert_eq!(health_from_container_state(&state), Some(HealthStatus::Unhealthy));
+    }
+
+    #[test]
+    fn should_return_no_health_for_container_with_no_health_check_configured() {
+        let state = container_state_with_health(HealthStatusEnum::NONE);
+        assert_eq!(health_from_container_state(&state), None);
     }
 }

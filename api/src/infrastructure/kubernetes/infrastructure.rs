@@ -55,7 +55,7 @@ use futures::StreamExt;
 use futures::{AsyncBufReadExt, TryStreamExt};
 use http_body_util::{BodyExt, Empty};
 use hyper_util::rt::TokioIo;
-use k8s_openapi::api::core::v1::PersistentVolumeClaim;
+use k8s_openapi::api::core::v1::{PersistentVolumeClaim, PodStatus};
 use k8s_openapi::api::storage::v1::StorageClass;
 use k8s_openapi::api::{
     apps::v1::Deployment as V1Deployment, core::v1::Namespace as V1Namespace,
@@ -1044,6 +1044,30 @@ impl HttpForwarder for K8sHttpForwarder {
     }
 }
 
+fn health_from_pod(pod: &V1Pod) -> Option<HealthStatus> {
+    let pod_status = pod.status.as_ref()?;
+    let conditions = pod_status.conditions.as_ref()?;
+    let ready = conditions.iter().find(|c| c.type_ == "Ready")?;
+    match ready.status.as_str() {
+        "True" => Some(HealthStatus::Healthy),
+        "False" if any_container_starting(pod_status) => Some(HealthStatus::Starting),
+        "False" => Some(HealthStatus::Unhealthy),
+        _ => None,
+    }
+}
+
+fn any_container_starting(pod_status: &PodStatus) -> bool {
+    pod_status
+        .container_statuses
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .any(|cs| {
+            cs.state.as_ref().map_or(false, |s| s.waiting.is_some())
+                || !cs.started.unwrap_or(true)
+        })
+}
+
 impl TryFrom<(V1Deployment, Option<V1Pod>)> for Service {
     type Error = KubernetesInfrastructureError;
 
@@ -1076,15 +1100,7 @@ impl TryFrom<(V1Deployment, Option<V1Pod>)> for Service {
                 .map(|t| t.0)
         });
 
-        let health = pod.as_ref().and_then(|pod| {
-            let conditions = pod.status.as_ref()?.conditions.as_ref()?;
-            let ready = conditions.iter().find(|c| c.type_ == "Ready")?;
-            match ready.status.as_str() {
-                "True" => Some(HealthStatus::Healthy),
-                "False" => Some(HealthStatus::Unhealthy),
-                _ => None,
-            }
-        });
+        let health = pod.as_ref().and_then(health_from_pod);
 
         Ok(Service {
             id: name,
@@ -1329,6 +1345,103 @@ mod tests {
                 deployment_name
             } if deployment_name == "master-nginx"
         ));
+    }
+
+    fn pod_with_ready_condition(
+        status: &str,
+        container_statuses: Vec<k8s_openapi::api::core::v1::ContainerStatus>,
+    ) -> V1Pod {
+        use k8s_openapi::api::core::v1::{PodCondition, PodStatus};
+        V1Pod {
+            status: Some(PodStatus {
+                conditions: Some(vec![PodCondition {
+                    type_: String::from("Ready"),
+                    status: String::from(status),
+                    ..Default::default()
+                }]),
+                container_statuses: if container_statuses.is_empty() {
+                    None
+                } else {
+                    Some(container_statuses)
+                },
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    }
+
+    fn container_status_waiting() -> k8s_openapi::api::core::v1::ContainerStatus {
+        use k8s_openapi::api::core::v1::{ContainerState, ContainerStateWaiting, ContainerStatus};
+        ContainerStatus {
+            state: Some(ContainerState {
+                waiting: Some(ContainerStateWaiting::default()),
+                ..Default::default()
+            }),
+            started: Some(false),
+            ..Default::default()
+        }
+    }
+
+    fn container_status_startup_probe_pending() -> k8s_openapi::api::core::v1::ContainerStatus {
+        use k8s_openapi::api::core::v1::{ContainerState, ContainerStateRunning, ContainerStatus};
+        ContainerStatus {
+            state: Some(ContainerState {
+                running: Some(ContainerStateRunning::default()),
+                ..Default::default()
+            }),
+            started: Some(false),
+            ..Default::default()
+        }
+    }
+
+    fn container_status_running() -> k8s_openapi::api::core::v1::ContainerStatus {
+        use k8s_openapi::api::core::v1::{ContainerState, ContainerStateRunning, ContainerStatus};
+        ContainerStatus {
+            state: Some(ContainerState {
+                running: Some(ContainerStateRunning::default()),
+                ..Default::default()
+            }),
+            started: Some(true),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn should_return_no_health_for_pod_without_conditions() {
+        assert_eq!(health_from_pod(&V1Pod::default()), None);
+    }
+
+    #[test]
+    fn should_return_healthy_when_ready_condition_is_true() {
+        let pod = pod_with_ready_condition("True", vec![container_status_running()]);
+        assert_eq!(health_from_pod(&pod), Some(HealthStatus::Healthy));
+    }
+
+    #[test]
+    fn should_return_starting_when_container_is_waiting() {
+        let pod = pod_with_ready_condition("False", vec![container_status_waiting()]);
+        assert_eq!(health_from_pod(&pod), Some(HealthStatus::Starting));
+    }
+
+    #[test]
+    fn should_return_starting_when_startup_probe_is_pending() {
+        let pod = pod_with_ready_condition(
+            "False",
+            vec![container_status_startup_probe_pending()],
+        );
+        assert_eq!(health_from_pod(&pod), Some(HealthStatus::Starting));
+    }
+
+    #[test]
+    fn should_return_unhealthy_when_ready_is_false_and_all_containers_started() {
+        let pod = pod_with_ready_condition("False", vec![container_status_running()]);
+        assert_eq!(health_from_pod(&pod), Some(HealthStatus::Unhealthy));
+    }
+
+    #[test]
+    fn should_return_no_health_when_ready_condition_is_unknown() {
+        let pod = pod_with_ready_condition("Unknown", vec![]);
+        assert_eq!(health_from_pod(&pod), None);
     }
 
     mod k3s {
