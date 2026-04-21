@@ -32,8 +32,8 @@ use crate::infrastructure::{
     REPLICATED_ENV_LABEL, SERVICE_NAME_LABEL,
 };
 use crate::models::{
-    App, AppName, ContainerType, Environment, Image, Owner, Service, ServiceConfig, ServiceError,
-    ServiceStatus, State, WebHostMeta,
+    App, AppName, ContainerType, Environment, HealthStatus, Image, Owner, Service, ServiceConfig,
+    ServiceError, ServiceStatus, State, WebHostMeta,
 };
 use anyhow::Result;
 use async_stream::stream;
@@ -53,8 +53,8 @@ use bollard::secret::{
 };
 use bollard::service::{
     ContainerCreateResponse, ContainerInspectResponse, ContainerStateStatusEnum, ContainerSummary,
-    CreateImageInfo, EndpointSettings, HostConfig, RestartPolicy, RestartPolicyNameEnum,
-    VolumeListResponse,
+    CreateImageInfo, EndpointSettings, HealthStatusEnum, HostConfig, RestartPolicy,
+    RestartPolicyNameEnum, VolumeListResponse,
 };
 use bollard::Docker;
 use chrono::{DateTime, FixedOffset, Utc};
@@ -1335,10 +1335,20 @@ impl TryFrom<ContainerInspectResponse> for Service {
             _ => ServiceStatus::Paused,
         };
 
+        let health = state
+            .health
+            .and_then(|h| h.status)
+            .and_then(|s| match s {
+                HealthStatusEnum::STARTING => Some(HealthStatus::Starting),
+                HealthStatusEnum::HEALTHY => Some(HealthStatus::Healthy),
+                HealthStatusEnum::UNHEALTHY => Some(HealthStatus::Unhealthy),
+                _ => None,
+            });
+
         Ok(Service {
             id: container_id,
             config,
-            state: State { status, started_at },
+            state: State { status, health, started_at },
         })
     }
 }

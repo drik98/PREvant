@@ -160,6 +160,8 @@ pub struct Service {
 #[serde(rename_all = "camelCase")]
 pub struct State {
     pub status: ServiceStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub health: Option<HealthStatus>,
     #[serde(skip)]
     pub started_at: Option<DateTime<Utc>>,
 }
@@ -169,6 +171,14 @@ pub struct State {
 pub enum ServiceStatus {
     Running,
     Paused,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum HealthStatus {
+    Starting,
+    Healthy,
+    Unhealthy,
 }
 
 impl Service {
@@ -410,9 +420,34 @@ mod tests {
                 id: String::from("some id"),
                 state: crate::models::State {
                     status: ServiceStatus::Running,
+                    health: None,
                     started_at: Some(Utc::now()),
                 },
                 config: crate::sc!("mariadb", "mariadb:latest")
+            })
+            .unwrap()
+        );
+    }
+
+    #[test]
+    fn serialize_service_with_health() {
+        assert_json_eq!(
+            serde_json::json!({
+                "name": "nginx",
+                "type": "instance",
+                "state": {
+                    "status": "running",
+                    "health": "unhealthy"
+                }
+            }),
+            serde_json::to_value(Service {
+                id: String::from("some id"),
+                state: crate::models::State {
+                    status: ServiceStatus::Running,
+                    health: Some(HealthStatus::Unhealthy),
+                    started_at: None,
+                },
+                config: crate::sc!("nginx", "nginx:latest")
             })
             .unwrap()
         );
@@ -427,6 +462,8 @@ mod tests {
                     state: State {
                         status: ServiceStatus::Running,
                         started_at: None,
+
+                        health: None,
                     },
                     config: sc!("b"),
                 },
@@ -435,6 +472,8 @@ mod tests {
                     state: State {
                         status: ServiceStatus::Running,
                         started_at: None,
+
+                        health: None,
                     },
                     config: sc!("a"),
                 },
@@ -450,6 +489,8 @@ mod tests {
                     state: State {
                         status: ServiceStatus::Running,
                         started_at: None,
+
+                        health: None,
                     },
                     config: sc!("a"),
                 },
@@ -458,6 +499,8 @@ mod tests {
                     state: State {
                         status: ServiceStatus::Running,
                         started_at: None,
+
+                        health: None,
                     },
                     config: sc!("b"),
                 },
@@ -482,6 +525,8 @@ mod tests {
                         state: State {
                             status: ServiceStatus::Running,
                             started_at: None,
+
+                            health: None,
                         },
                         config: sc!("b"),
                     },
@@ -495,6 +540,8 @@ mod tests {
                         state: State {
                             status: ServiceStatus::Running,
                             started_at: None,
+
+                            health: None,
                         },
                         config: sc!("a"),
                     },
@@ -513,6 +560,8 @@ mod tests {
                         state: State {
                             status: ServiceStatus::Running,
                             started_at: None,
+
+                            health: None,
                         },
                         config: sc!("a"),
                     },
@@ -526,6 +575,8 @@ mod tests {
                         state: State {
                             status: ServiceStatus::Running,
                             started_at: None,
+
+                            health: None,
                         },
                         config: sc!("b"),
                     },
@@ -548,6 +599,8 @@ mod tests {
                 state: State {
                     status: ServiceStatus::Running,
                     started_at: None,
+
+                    health: None,
                 },
                 config: sc!("a"),
             }],
@@ -592,6 +645,8 @@ mod tests {
                     state: State {
                         status: ServiceStatus::Running,
                         started_at: None,
+
+                        health: None,
                     },
                     config: sc!("a"),
                 },

@@ -563,6 +563,7 @@ impl From<RawService> for Service {
             state: State {
                 status: value.status,
                 started_at: None,
+                health: None,
             },
             config: value.config,
         }
@@ -622,6 +623,7 @@ mod tests {
                             state: State {
                                 status: ServiceStatus::Paused,
                                 started_at: None,
+                                health: None,
                             },
                             config: sc!("nginx"),
                         }],
@@ -649,6 +651,7 @@ mod tests {
                     state: State {
                         status: ServiceStatus::Paused,
                         started_at: None,
+                        health: None,
                     },
                     config: sc!("nginx"),
                 }],
@@ -690,6 +693,7 @@ mod tests {
                             state: State {
                                 status: ServiceStatus::Paused,
                                 started_at: None,
+                                health: None,
                             },
                             config: sc!("nginx"),
                         }],
@@ -758,6 +762,7 @@ mod tests {
                             state: State {
                                 status: ServiceStatus::Paused,
                                 started_at: None,
+                                health: None,
                             },
                             config: sc!("nginx"),
                         }],
@@ -807,6 +812,7 @@ mod tests {
                     state: State {
                         status: ServiceStatus::Paused,
                         started_at: None,
+                        health: None,
                     },
                     config: sc!("nginx").with_port(0),
                 }],
@@ -873,6 +879,7 @@ mod tests {
                                 state: State {
                                     status: ServiceStatus::Paused,
                                     started_at: None,
+                                    health: None,
                                 },
                                 config: sc!("nginx"),
                             }],
@@ -943,6 +950,7 @@ mod tests {
                                 state: State {
                                     status: ServiceStatus::Paused,
                                     started_at: None,
+                                    health: None,
                                 },
                                 config: sc!("nginx"),
                             }],
@@ -971,6 +979,7 @@ mod tests {
                                 state: State {
                                     status: ServiceStatus::Paused,
                                     started_at: None,
+                                    health: None,
                                 },
                                 config: sc!("nginx"),
                             }],
@@ -1028,6 +1037,7 @@ mod tests {
                             state: State {
                                 status: ServiceStatus::Paused,
                                 started_at: None,
+                                health: None,
                             },
                             config: sc!("nginx"),
                         }],
@@ -1067,6 +1077,7 @@ mod tests {
                             state: State {
                                 status: ServiceStatus::Paused,
                                 started_at: None,
+                                health: None,
                             },
                             config: sc!("nginx"),
                         }],

@@ -144,6 +144,7 @@ impl Infrastructure for DummyInfrastructure {
                                 .unwrap()
                                 .with_timezone(&Utc),
                         ),
+                        health: None,
                     },
                 };
 
@@ -228,6 +229,7 @@ impl Infrastructure for DummyInfrastructure {
                                 .unwrap()
                                 .with_timezone(&Utc),
                         ),
+                        health: None,
                     },
                 })
                 .collect::<Vec<_>>(),

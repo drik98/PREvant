@@ -42,8 +42,8 @@ use crate::infrastructure::{
 };
 use crate::models::user_defined_parameters::UserDefinedParameters;
 use crate::models::{
-    App, AppName, ContainerType, Environment, Image, Owner, Service, ServiceConfig, ServiceError,
-    ServiceStatus, State, WebHostMeta,
+    App, AppName, ContainerType, Environment, HealthStatus, Image, Owner, Service, ServiceConfig,
+    ServiceError, ServiceStatus, State, WebHostMeta,
 };
 use anyhow::Result;
 use async_stream::stream;
@@ -1067,17 +1067,29 @@ impl TryFrom<(V1Deployment, Option<V1Pod>)> for Service {
             })
             .unwrap_or(ServiceStatus::Paused);
 
-        let started_at = deployment_and_pod.1.and_then(|pod| {
+        let pod = deployment_and_pod.1;
+
+        let started_at = pod.as_ref().and_then(|pod| {
             pod.status
                 .as_ref()
                 .and_then(|s| s.start_time.as_ref())
                 .map(|t| t.0)
         });
 
+        let health = pod.as_ref().and_then(|pod| {
+            let conditions = pod.status.as_ref()?.conditions.as_ref()?;
+            let ready = conditions.iter().find(|c| c.type_ == "Ready")?;
+            match ready.status.as_str() {
+                "True" => Some(HealthStatus::Healthy),
+                "False" => Some(HealthStatus::Unhealthy),
+                _ => None,
+            }
+        });
+
         Ok(Service {
             id: name,
             config: service_config,
-            state: State { status, started_at },
+            state: State { status, health, started_at },
         })
     }
 }

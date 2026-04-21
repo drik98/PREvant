@@ -608,6 +608,7 @@ mod tests {
             state: State {
                 status: ServiceStatus::Running,
                 started_at: Some(Utc::now()),
+                health: None,
             },
             config: crate::sc!("nginx", "nginx:latest"),
         };
@@ -646,6 +647,7 @@ mod tests {
             state: State {
                 status: ServiceStatus::Running,
                 started_at: Some(Utc::now()),
+                health: None,
             },
             config: crate::sc!("kafka-rest", "confluentinc/cp-kafka-rest"),
         };
@@ -696,6 +698,7 @@ mod tests {
             state: State {
                 status: ServiceStatus::Paused,
                 started_at: None,
+                health: None,
             },
             config: crate::sc!("nginx", "nginx:latest"),
         };
@@ -737,6 +740,7 @@ mod tests {
             state: State {
                 status: ServiceStatus::Running,
                 started_at: Some(Utc::now()),
+                health: None,
             },
             config: crate::sc!("nginx", "nginx:latest"),
         };
@@ -756,6 +760,7 @@ mod tests {
             state: State {
                 status: ServiceStatus::Paused,
                 started_at: None,
+                health: None,
             },
             config: crate::sc!("nginx", "nginx:latest"),
         };
