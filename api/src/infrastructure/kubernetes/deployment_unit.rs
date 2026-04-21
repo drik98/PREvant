@@ -1766,6 +1766,7 @@ mod tests {
             state: State {
                 status: crate::models::ServiceStatus::Running,
                 started_at: Some(Utc::now()),
+                health: None,
             },
         }));
 
@@ -1806,6 +1807,7 @@ mod tests {
             state: State {
                 status: crate::models::ServiceStatus::Running,
                 started_at: Some(Utc::now()),
+                health: None,
             },
         }));
 

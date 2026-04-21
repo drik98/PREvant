@@ -1252,6 +1252,7 @@ Log msg 3 of service-a of app master
                                 .unwrap()
                                 .with_timezone(&Utc)
                         ),
+                        health: None,
                     }
                 }],
                 HashSet::new(),

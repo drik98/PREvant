@@ -273,6 +273,7 @@ mod tests {
                                 state: crate::models::State {
                                     status: ServiceStatus::Running,
                                     started_at: Some(Utc::now()),
+                                    health: None,
                                 },
                                 config: crate::sc!("postgres", "postgres:latest")
                             },
@@ -286,6 +287,7 @@ mod tests {
                                 state: crate::models::State {
                                     status: ServiceStatus::Running,
                                     started_at: Some(Utc::now()),
+                                    health: None,
                                 },
                                 config: crate::sc!("mariadb", "mariadb:latest")
                             },
@@ -339,6 +341,7 @@ mod tests {
                                 state: crate::models::State {
                                     status: ServiceStatus::Running,
                                     started_at: Some(Utc::now()),
+                                    health: None,
                                 },
                                 config: crate::sc!("postgres", "postgres:latest")
                             },
@@ -352,6 +355,7 @@ mod tests {
                                 state: crate::models::State {
                                     status: ServiceStatus::Running,
                                     started_at: Some(Utc::now()),
+                                    health: None,
                                 },
                                 config: crate::sc!("mariadb", "mariadb:latest")
                             },
@@ -409,6 +413,7 @@ mod tests {
                                 state: crate::models::State {
                                     status: ServiceStatus::Running,
                                     started_at: Some(Utc::now()),
+                                    health: None,
                                 },
                                 config: crate::sc!("postgres", "postgres:latest")
                             },
@@ -422,6 +427,7 @@ mod tests {
                                 state: crate::models::State {
                                     status: ServiceStatus::Running,
                                     started_at: Some(Utc::now()),
+                                    health: None,
                                 },
                                 config: crate::sc!("mariadb", "mariadb:latest")
                             },

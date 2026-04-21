@@ -577,6 +577,7 @@ mod tests {
                     state: crate::models::State {
                         status: crate::models::ServiceStatus::Paused,
                         started_at: None,
+                        health: None,
                     },
                     config: sc!("nginx"),
                 }],
